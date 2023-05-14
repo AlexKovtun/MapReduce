@@ -3,4 +3,8 @@ project(MapReduce)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(MapReduce main.cpp MapReduceFramework.h MapReduceClient.h)
+set(CMAKE_CXX_FLAGS -pthread)
+
+add_executable(MapReduce main.cpp MapReduceFramework.h  MapReduceFramework.cpp
+        MapReduceClient.h
+        JobContext.cpp JobContext.h)
