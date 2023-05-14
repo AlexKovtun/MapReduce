@@ -21,6 +21,8 @@ class JobContext {
     JobContext(const MapReduceClient& client, const InputVec& inputVec,
                OutputVec& outputVec,int numOfThreads);
 
+  void initThreads();
+
  private:
   int numOfThreads;
   const MapReduceClient &client;
@@ -28,8 +30,6 @@ class JobContext {
   OutputVec &output_vec;
   pthread_t *threads;
   JobState job_state;
-
-  void initThreads() const;
 };
 
 #endif //_JOBCONTEXT_H_

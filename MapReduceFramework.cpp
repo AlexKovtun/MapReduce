@@ -10,5 +10,6 @@ JobHandle startMapReduceJob(const MapReduceClient& client,
 
   auto *jb = new JobContext(client, inputVec, outputVec,
                             multiThreadLevel);
+  jb->initThreads();
   return static_cast<JobHandle>(jb);//TODO: is this the way static cast done?
 }

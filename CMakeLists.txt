@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS -pthread)
 
+
 add_executable(MapReduce main.cpp MapReduceFramework.h  MapReduceFramework.cpp
-        MapReduceClient.h
+        MapReduceClient.h ThreadContext.cpp ThreadContext.h
         JobContext.cpp JobContext.h)
