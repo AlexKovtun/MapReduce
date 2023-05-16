@@ -15,7 +15,7 @@ struct ThreadContext {
 
     int id;
     IntermediateVec vec;
-    const JobContext *job_context;//TODO check reference or not
+    JobContext *job_context;//TODO check reference or not
 };
 
 #endif //_THREADCONTEXT_H_

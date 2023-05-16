@@ -20,3 +20,6 @@ void emit2 (K2* key, V2* value, void* context){
   auto thread_context = (ThreadContext*) context;
   thread_context->vec.push_back (IntermediatePair(key,value));
 }
+
+
+void emit3 (K3* key, V3* value, void* context){}
