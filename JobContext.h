@@ -8,6 +8,7 @@
 #include "MapReduceClient.h"
 #include "MapReduceFramework.h"
 #include <pthread.h>
+#include <atomic>
 
 /*
  * Inside MapReduceFramework.cpp you are encouraged to define JobContext – a srtuct
@@ -16,20 +17,22 @@ mutexes…). The pointer to this struct can be casted to JobHandle. You are enco
 use C++ static casting.
  */
 
-class JobContext {
- public:
+struct JobContext {
+
     JobContext(const MapReduceClient& client, const InputVec& inputVec,
                OutputVec& outputVec,int numOfThreads);
+    ~JobContext();
 
-  void initThreads();
+  void startThreads();
 
- private:
   int numOfThreads;
   const MapReduceClient &client;
   const InputVec &input_vec;
   OutputVec &output_vec;
   pthread_t *threads;
   JobState job_state;
+  std::atomic<int>* next_to_process;
+
 };
 
 #endif //_JOBCONTEXT_H_
