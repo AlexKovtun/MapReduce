@@ -28,10 +28,9 @@ struct JobContext {
     ~JobContext ();
 
     void startThreads ();
-    void shuffle(ThreadContext* thread_context);
-    void InsertVector (IntermediateVec vec);
+    void shuffle();
+    void InsertVector (const IntermediateVec& vec);
     int numOfThreads;
-    std::vector<ThreadContext *> threadContexts;
     const MapReduceClient &client;
     const InputVec &input_vec;
     OutputVec &output_vec;
@@ -40,6 +39,8 @@ struct JobContext {
     std::atomic<int> *next_to_process;
     Barrier barrier;
     std::map<K2*, IntermediateVec> shuffle_map;
+    std::vector<ThreadContext* > threadContexts;
+    std::vector<IntermediateVec> shuffle_vec;
 };
 
 #endif //_JOBCONTEXT_H_

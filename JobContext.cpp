@@ -3,6 +3,7 @@
 //
 
 #include "JobContext.h"
+#include "ThreadContext.h"
 
 #define SHUFFLE_THREAD 0
 /** ########################## START thread function #########################
@@ -34,7 +35,7 @@ void *MapReduceLogic (void *threadContext)
   thread_context->job_context->barrier.barrier ();
   if (thread_context->id == SHUFFLE_THREAD)
     {
-      thread_context->job_context->shuffle (thread_context);
+      thread_context->job_context->shuffle ();
     }
   thread_context->job_context->barrier.barrier ();
   //reduce();
@@ -63,12 +64,14 @@ void JobContext::startThreads ()
 {
   for (int i = 0; i < numOfThreads; ++i)
     {
-      threadContexts.push_back(new ThreadContext(i, this));
+      //auto thread_context = new ThreadContext(i, this);
+      threadContexts.push_back (new ThreadContext (i, this));
+
       // thread_context-> the data that each thread will have(passed by param)
       // basically it's the parameters the MapReduceLogic will get
       // MapReduceLogic-> will be the method that the thread will run
       if (pthread_create (threads + i, NULL,
-                          &MapReduceLogic, &threadContexts[i]) != 0)
+                          &MapReduceLogic, threadContexts[i]) != 0)
         {
           //TODO: printf error
         }
@@ -82,15 +85,20 @@ JobContext::~JobContext ()
   delete next_to_process;
 }
 
-void JobContext::shuffle (ThreadContext* thread_context)
+void JobContext::shuffle ()
 {
   for (int i = 0; i < numOfThreads; ++i)
     {
-      InsertVector (thread_context->vec);
+      InsertVector (threadContexts[i]->vec);
+    }
+
+  for (auto it = shuffle_map.begin (); it != shuffle_map.end (); ++it)
+    {
+      shuffle_vec.push_back (it->second);
     }
 }
 
-void JobContext::InsertVector (IntermediateVec vec)
+void JobContext::InsertVector (const IntermediateVec &vec)
 {
   for (const auto &elem: vec)
     {
@@ -110,15 +118,5 @@ void JobContext::InsertVector (IntermediateVec vec)
 
 
 
-
-/*
- * for (int i = 0; i < MT_LEVEL; ++i) {
-        contexts[i] = {&atomic_counter, &bad_counter};
-    }
-
-    for (int i = 0; i < MT_LEVEL; ++i) {
-        pthread_create(threads + i, NULL, foo, contexts + i);
-    }
- */
 
 
