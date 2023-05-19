@@ -29,7 +29,9 @@ struct JobContext {
 
     void startThreads ();
     void shuffle();
-    void InsertVector (const IntermediateVec& vec);
+    void JoinAllThreads ();
+    void InsertVector(const IntermediateVec &vec ,int *counter);
+
     int numOfThreads;
     const MapReduceClient &client;
     const InputVec &input_vec;
@@ -37,10 +39,18 @@ struct JobContext {
     pthread_t *threads;
     JobState job_state;
     std::atomic<int> *next_to_process;
+    std::atomic<int> *count_reduced;
+
     Barrier barrier;
     std::map<K2*, IntermediateVec> shuffle_map;
     std::vector<ThreadContext* > threadContexts;
     std::vector<IntermediateVec> shuffle_vec;
+    pthread_mutex_t  reduce_mutex;
+    pthread_mutex_t  emit3_mutex;
+
+    bool alreadyWait;
+    int total_size;
+
 };
 
 #endif //_JOBCONTEXT_H_
