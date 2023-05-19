@@ -22,6 +22,6 @@ JobHandle startMapReduceJob(const MapReduceClient& client,
 void waitForJob(JobHandle job);
 void getJobState(JobHandle job, JobState* state);
 void closeJobHandle(JobHandle job);
-	
+
 	
 #endif //MAPREDUCEFRAMEWORK_H

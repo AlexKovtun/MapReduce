@@ -14,6 +14,8 @@
 #include "MapReduceFramework.h"
 #include "ThreadContext.h"
 
+
+
 /*
  * Inside MapReduceFramework.cpp you are encouraged to define JobContext – a srtuct
 which includes all the parameters which are relevant to the job (e.g., the threads, state,
@@ -28,9 +30,9 @@ struct JobContext {
     ~JobContext ();
 
     void startThreads ();
-    void shuffle();
+    void shuffleStage();
     void JoinAllThreads ();
-    void InsertVector(const IntermediateVec &vec ,int *counter);
+    void InsertVector(const IntermediateVec &vec );
 
     int numOfThreads;
     const MapReduceClient &client;
@@ -38,18 +40,22 @@ struct JobContext {
     OutputVec &output_vec;
     pthread_t *threads;
     JobState job_state;
-    std::atomic<uint64_t> *next_to_process;
-    std::atomic<int> *count_reduced;
+    std::atomic<uint64_t> *atomic_counter;
 
     Barrier barrier;
     std::map<K2*, IntermediateVec> shuffle_map;
     std::vector<ThreadContext* > threadContexts;
     std::vector<IntermediateVec> shuffle_vec;
+
     pthread_mutex_t  reduce_mutex;
     pthread_mutex_t  emit3_mutex;
+    pthread_mutex_t  map_mutex;
+    pthread_mutex_t job_state_mutex;
 
     bool alreadyWait;
-    int total_size;
+
+    void incCounter () const;
+    void setStage (int stage);
 
 };
 
