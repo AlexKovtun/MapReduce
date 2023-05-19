@@ -38,7 +38,7 @@ struct JobContext {
     OutputVec &output_vec;
     pthread_t *threads;
     JobState job_state;
-    std::atomic<int> *next_to_process;
+    std::atomic<uint64_t> *next_to_process;
     std::atomic<int> *count_reduced;
 
     Barrier barrier;
