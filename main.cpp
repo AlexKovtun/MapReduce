@@ -82,30 +82,32 @@ int main(int argc, char** argv)
   JobHandle job = startMapReduceJob(client, inputVec, outputVec, 4);
   getJobState(job, &state);
 
-  while (state.stage != REDUCE_STAGE && state.percentage != 100.0)
+  while (state.stage != REDUCE_STAGE || state.percentage != 100.0)
     {
       if (last_state.stage != state.stage || last_state.percentage != state.percentage){
           printf("stage %d, %f%% \n",
                  state.stage, state.percentage);
+          fflush (stdout);
         }
       usleep(100000);
       last_state = state;
       getJobState(job, &state);
     }
-//  printf("stage %d, %f%% \n",
-//         state.stage, state.percentage);
-//  printf("Done!\n");
-//
-//  closeJobHandle(job);
-//
-//  for (OutputPair& pair: outputVec) {
-//      char c = ((const KChar*)pair.first)->c;
-//      int count = ((const VCount*)pair.second)->count;
-//      printf("The character %c appeared %d time%s\n",
-//             c, count, count > 1 ? "s" : "");
-//      delete pair.first;
-//      delete pair.second;
-//    }
+  printf("stage %d, %f%% \n",
+         state.stage, state.percentage);
+  printf("Done!\n");
+
+  closeJobHandle(job);
+
+  for (OutputPair& pair: outputVec) {
+      char c = ((const KChar*)pair.first)->c;
+      int count = ((const VCount*)pair.second)->count;
+      printf("The character %c appeared %d time%s\n",
+             c, count, count > 1 ? "s" : "");
+      delete pair.first;
+      delete pair.second;
+    }
 
   return 0;
 }
+

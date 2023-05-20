@@ -8,13 +8,12 @@
 #include <atomic>
 #include <algorithm>
 #include <map>
+#include <iostream>
 
 #include "Barrier.h"
 #include "MapReduceClient.h"
 #include "MapReduceFramework.h"
 #include "ThreadContext.h"
-
-
 
 /*
  * Inside MapReduceFramework.cpp you are encouraged to define JobContext – a srtuct
@@ -30,9 +29,9 @@ struct JobContext {
     ~JobContext ();
 
     void startThreads ();
-    void shuffleStage();
+    void shuffleStage ();
     void JoinAllThreads ();
-    void InsertVector(const IntermediateVec &vec );
+    void InsertVector (const IntermediateVec &vec);
 
     int numOfThreads;
     const MapReduceClient &client;
@@ -43,13 +42,14 @@ struct JobContext {
     std::atomic<uint64_t> *atomic_counter;
 
     Barrier barrier;
-    std::map<K2*, IntermediateVec> shuffle_map;
-    std::vector<ThreadContext* > threadContexts;
+    std::map<K2 *, IntermediateVec> shuffle_map;
+    std::vector<ThreadContext *> threadContexts;
     std::vector<IntermediateVec> shuffle_vec;
 
-    pthread_mutex_t  reduce_mutex;
-    pthread_mutex_t  emit3_mutex;
-    pthread_mutex_t  map_mutex;
+    pthread_mutex_t already_wait_mutex;
+    pthread_mutex_t reduce_mutex;
+    pthread_mutex_t emit3_mutex;
+    pthread_mutex_t map_mutex;
     pthread_mutex_t job_state_mutex;
 
     bool alreadyWait;
@@ -57,6 +57,8 @@ struct JobContext {
     void incCounter () const;
     void setStage (int stage);
 
+    uint64_t getCounter () const;
+    static bool isKeysEqual (IntermediatePair p1, IntermediatePair p2);
 };
 
 #endif //_JOBCONTEXT_H_

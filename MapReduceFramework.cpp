@@ -5,9 +5,9 @@
 #include "JobContext.h"
 #include "ThreadContext.h"
 
-#define STAGE 63
+#define STAGE 62
 #define TOTAL_PAIRS 31
-#define COUNTER 0x7FFFFFFF
+#define RIGHT_MOST_31 0x7FFFFFFF
 JobHandle startMapReduceJob (const MapReduceClient &client,
                              const InputVec &inputVec, OutputVec &outputVec,
                              int multiThreadLevel)
@@ -62,9 +62,9 @@ void getJobState (JobHandle job, JobState *state)
     }
   else
     {
-      total = *job_context->atomic_counter >> TOTAL_PAIRS;
+      total = (*job_context->atomic_counter >> TOTAL_PAIRS) & RIGHT_MOST_31;
     }
-  already_processed = *job_context->atomic_counter & COUNTER;
+  already_processed = *job_context->atomic_counter & RIGHT_MOST_31;
   //TODO: check division by zero
   state->percentage = ((float) already_processed / (float) total) * 100;
   state->stage = (stage_t) ((*job_context->atomic_counter )>> STAGE);
