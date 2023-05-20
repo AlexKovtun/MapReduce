@@ -16,8 +16,8 @@ JobHandle startMapReduceJob (const MapReduceClient &client,
 
   auto *jb = new JobContext (client, inputVec, outputVec,
                              multiThreadLevel);
-  jb->setStage (MAP_STAGE);
-  jb->job_state.stage = MAP_STAGE;//TODO: should it be here?
+  *jb->atomic_counter = (uint64_t) 1 << STAGE;
+  jb->job_state.stage = MAP_STAGE;
   jb->startThreads ();
   return static_cast<JobHandle>(jb);//TODO: is this the way static cast done?
 }
@@ -73,7 +73,6 @@ void getJobState (JobHandle job, JobState *state)
 {
   auto job_context = static_cast<JobContext *> (job);
   pthread_mutex_lock (&job_context->job_state_mutex);
-
   uint64_t total, currentlyProcessed;
   uint64_t currentVal = *job_context->atomic_counter;
   if (currentVal >> STAGE == MAP_STAGE)
@@ -93,10 +92,13 @@ void getJobState (JobHandle job, JobState *state)
       return;
     }
   auto per = ((float) currentlyProcessed / (float) total) * 100;
-  std::cout << " ####" << currentlyProcessed << std::endl;
-  std::cout << " ****" << total << std::endl;
-  std::cout << " ????" <<per <<std::endl;
+  auto stage = (stage_t) (currentVal >> STAGE);
+  job_context->job_state.percentage = per;
+  job_context->job_state.stage = stage;
   state->percentage = per;
-  state->stage = (stage_t) ((*job_context->atomic_counter) >> STAGE);
+  state->stage = stage;
   pthread_mutex_unlock (&job_context->job_state_mutex);
 }
+
+
+

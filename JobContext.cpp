@@ -57,9 +57,8 @@ void *MapReduceLogic (void *threadContext)
   std::sort (thread_vec.begin (), thread_vec.end (), compareKey);
   /** END SORT STAGE **/
 
-
-
   /** SHUFFLE STAGE **/
+
   thread_context->job_context->barrier->barrier ();
   if (thread_context->id == SHUFFLE_THREAD)
     {
@@ -162,7 +161,10 @@ void JobContext::shuffleStage ()
     {
       total_size += (int) threadContexts[i]->vec.size ();
     }
-  *atomic_counter = total_size << TOTAL_PAIRS |(uint64_t) SHUFFLE_STAGE << 62;
+//  *atomic_counter&= 0x3FFFFFFFFFFFFFFF;
+//  *atomic_counter|= 2ULL << STAGE;
+  *atomic_counter = total_size << TOTAL_PAIRS | (uint64_t) SHUFFLE_STAGE << STAGE;
+  job_state.stage = SHUFFLE_STAGE;
   for (int i = 0; i < numOfThreads; ++i)
     {
       InsertVector (threadContexts[i]->vec);
@@ -173,6 +175,7 @@ void JobContext::shuffleStage ()
       shuffle_vec.push_back (it.second);
     }
   *atomic_counter = total_size << TOTAL_PAIRS | (uint64_t) REDUCE_STAGE << 62;
+  job_state.stage = REDUCE_STAGE;
   //std::cout<<*atomic_counter<<std::endl;
 }
 
