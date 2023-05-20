@@ -8,6 +8,7 @@
 #define STAGE 62
 #define TOTAL_PAIRS 31
 #define RIGHT_MOST_31 0x7FFFFFFF
+
 JobHandle startMapReduceJob (const MapReduceClient &client,
                              const InputVec &inputVec, OutputVec &outputVec,
                              int multiThreadLevel)
@@ -24,7 +25,27 @@ JobHandle startMapReduceJob (const MapReduceClient &client,
 void waitForJob (JobHandle job)
 {
   auto job_context = static_cast<JobContext *> (job);
-  job_context->JoinAllThreads ();
+  pthread_mutex_lock (&job_context->already_wait_mutex);
+  if (job_context->alreadyWait)
+    {
+      printf ("ERROR: Calling twice\n");
+      pthread_mutex_unlock (&job_context->already_wait_mutex);
+      return;
+    }
+  else
+    {
+      job_context->alreadyWait = true;
+    }
+  pthread_mutex_unlock (&job_context->already_wait_mutex);
+
+  for (int i = 0; i < job_context->numOfThreads; ++i)
+    {
+      if (pthread_join (job_context->threads[i], nullptr) != 0)
+        {
+          printf ("system error: witing twice in a job\n");
+          exit (1);
+        }
+    }
 }
 
 void emit2 (K2 *key, V2 *value, void *context)
@@ -53,20 +74,29 @@ void getJobState (JobHandle job, JobState *state)
   auto job_context = static_cast<JobContext *> (job);
   pthread_mutex_lock (&job_context->job_state_mutex);
 
-  state->stage = job_context->job_state.stage;
-  state->percentage = job_context->job_state.percentage;
-  uint64_t total = 0, already_processed = 0;
-  if (*job_context->atomic_counter >> STAGE == MAP_STAGE)
+  uint64_t total, currentlyProcessed;
+  uint64_t currentVal = *job_context->atomic_counter;
+  if (currentVal >> STAGE == MAP_STAGE)
     {
       total = job_context->input_vec.size ();
     }
   else
     {
-      total = (*job_context->atomic_counter >> TOTAL_PAIRS) & RIGHT_MOST_31;
+      total = ((currentVal >> TOTAL_PAIRS) & (RIGHT_MOST_31));
     }
-  already_processed = *job_context->atomic_counter & RIGHT_MOST_31;
-  //TODO: check division by zero
-  state->percentage = ((float) already_processed / (float) total) * 100;
-  state->stage = (stage_t) ((*job_context->atomic_counter )>> STAGE);
+  currentlyProcessed = currentVal & (RIGHT_MOST_31);
+  if (total == 0)
+    {
+      printf ("Error : Division by 0\n");
+      //state->stage = (stage_t) ((*job_context->atomic_counter) >> STAGE);
+      pthread_mutex_unlock (&job_context->job_state_mutex);
+      return;
+    }
+  auto per = ((float) currentlyProcessed / (float) total) * 100;
+  std::cout << " ####" << currentlyProcessed << std::endl;
+  std::cout << " ****" << total << std::endl;
+  std::cout << " ????" <<per <<std::endl;
+  state->percentage = per;
+  state->stage = (stage_t) ((*job_context->atomic_counter) >> STAGE);
   pthread_mutex_unlock (&job_context->job_state_mutex);
 }

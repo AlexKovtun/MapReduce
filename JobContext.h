@@ -41,7 +41,7 @@ struct JobContext {
     JobState job_state;
     std::atomic<uint64_t> *atomic_counter;
 
-    Barrier barrier;
+    Barrier *barrier;
     std::map<K2 *, IntermediateVec> shuffle_map;
     std::vector<ThreadContext *> threadContexts;
     std::vector<IntermediateVec> shuffle_vec;
