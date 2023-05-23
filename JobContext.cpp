@@ -158,7 +158,7 @@ JobContext::~JobContext ()
   status[2] = pthread_mutex_destroy (&map_mutex);
   status[3] = pthread_mutex_destroy (&already_wait_mutex);
   status[4] = pthread_mutex_destroy (&job_state_mutex);
-
+  checkStatus (status);
   delete atomic_counter;
   for (auto &threadContext: threadContexts)
     {
@@ -170,7 +170,7 @@ JobContext::~JobContext ()
 void JobContext::checkStatus(const int status[]){
   for(int i = 0; i < STATUS_SIZE;++i){
     if(status[i] != 0){
-      printf("system error: Error in deleting mutex, probably someone is using it");';
+      printf("system error: Error in deleting mutex, probably someone is using it");
       exit(1);
     }
   }
