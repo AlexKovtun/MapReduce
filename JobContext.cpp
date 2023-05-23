@@ -9,10 +9,9 @@
 #define TOTAL_PAIRS 31
 #define STAGE 62
 #define LEFT_MOST_31 0x7FFFFFFF
-
 #define FAILED_CREATE_THREAD " failed create thread"
-
 #define STATUS_SIZE 5
+
 bool compareKey (IntermediatePair p1, IntermediatePair p2)
 {
   return *p1.first < *p2.first;
@@ -207,7 +206,7 @@ void JobContext::InsertVector (const IntermediateVec &vec)
       for (auto &pair: shuffle_map)
         {
           if (isKeysEqual (pair.second[0], elem))
-            { //TODO: needed check if vec is empty?
+            {
               pair.second.push_back (elem);
               isInVec = true;
               break;

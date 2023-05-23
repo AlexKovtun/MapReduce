@@ -43,7 +43,7 @@ void waitForJob (JobHandle job)
     {
       if (pthread_join (job_context->threads[i], nullptr) != 0)
         {
-          printf ("system error: witing twice in a job\n");
+          printf ("system error: couldn't join thread\n");
           exit (FAILED);
         }
     }
@@ -88,7 +88,6 @@ void getJobState (JobHandle job, JobState *state)
   if (total == 0)
     {
       printf ("Error : Division by 0\n");
-      //state->stage = (stage_t) ((*job_context->atomic_counter) >> STAGE);
       pthread_mutex_unlock (&job_context->job_state_mutex);
       return;
     }

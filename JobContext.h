@@ -37,7 +37,7 @@ struct JobContext {
     const InputVec &input_vec;
     OutputVec &output_vec;
     pthread_t *threads;
-    JobState job_state;
+    JobState job_state{};
     std::atomic<uint64_t> *atomic_counter;
 
     Barrier *barrier;
@@ -45,11 +45,11 @@ struct JobContext {
     std::vector<ThreadContext *> threadContexts;
     std::vector<IntermediateVec> shuffle_vec;
 
-    pthread_mutex_t already_wait_mutex;
-    pthread_mutex_t reduce_mutex;
-    pthread_mutex_t emit3_mutex;
-    pthread_mutex_t map_mutex;
-    pthread_mutex_t job_state_mutex;
+    pthread_mutex_t already_wait_mutex{};
+    pthread_mutex_t reduce_mutex{};
+    pthread_mutex_t emit3_mutex{};
+    pthread_mutex_t map_mutex{};
+    pthread_mutex_t job_state_mutex{};
 
     bool alreadyWait;
 
