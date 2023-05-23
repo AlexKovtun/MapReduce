@@ -65,8 +65,11 @@ void emit3 (K3 *key, V3 *value, void *context)
 
 void closeJobHandle (JobHandle job)
 {
-  waitForJob (job);
   auto job_context = (JobContext *) job;
+  if (!job_context->alreadyWait)
+    {
+      waitForJob (job);
+    }
   delete job_context;
 }
 
