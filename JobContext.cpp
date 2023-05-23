@@ -25,11 +25,10 @@ bool compareKey (IntermediatePair p1, IntermediatePair p2)
  *  4.reduce
  *  **/
 
-void *MapReduceLogic (void *threadContext)
-{
-  auto thread_context = (ThreadContext *) threadContext;
 
-  /** MAP STAGE **/
+
+void mapStage(void* threadContext){
+  auto thread_context = (ThreadContext *) threadContext;
   auto job_vec = thread_context->job_context->input_vec;
   while (thread_context->job_context->getCounter () < job_vec.size ())
     {
@@ -47,29 +46,20 @@ void *MapReduceLogic (void *threadContext)
       thread_context->job_context->client.map (next_to_process.first,
                                                next_to_process.second,
                                                threadContext);
-
-      //(*thread_context->job_context->atomic_counter) += (uint64_t) 1 << 31;
     }
-  /** END MAP STAGE **/
+}
 
-  /** SORT STAGE **/
-  auto thread_vec = thread_context->vec;
-  std::sort (thread_vec.begin (), thread_vec.end (), compareKey);
-  /** END SORT STAGE **/
 
-  /** SHUFFLE STAGE **/
-
+void shuffleStage(ThreadContext* thread_context){
   thread_context->job_context->barrier->barrier ();
   if (thread_context->id == SHUFFLE_THREAD)
     {
       thread_context->job_context->shuffleStage ();
     }
   thread_context->job_context->barrier->barrier ();
+}
 
-  /** END SHUFFLE STAGE **/
-
-
-  /** REDUCE STAGE **/
+void* reduceStage(ThreadContext *thread_context){
   while (!thread_context->job_context->shuffle_vec.empty ())
     {
       pthread_mutex_lock (&thread_context->job_context->reduce_mutex);
@@ -89,14 +79,33 @@ void *MapReduceLogic (void *threadContext)
       thread_context->job_context->client.reduce (&vec, thread_context);
       *thread_context->job_context->atomic_counter += vec.size ();
     }
+}
+
+void *MapReduceLogic (void *threadContext)
+{
+  /** MAP STAGE **/
+  auto thread_context = (ThreadContext *) threadContext;
+  mapStage(threadContext);
+  /** END MAP STAGE **/
+
+  /** SORT STAGE **/
+  auto thread_vec = thread_context->vec;
+  std::sort (thread_vec.begin (), thread_vec.end (), compareKey);
+  /** END SORT STAGE **/
+
+  /** SHUFFLE STAGE **/
+  shuffleStage (thread_context);
+  /** END SHUFFLE STAGE **/
+
+
+  /** REDUCE STAGE **/
+  reduceStage(thread_context);
   return nullptr;
   /** END REDUCE STAGE **/
 }
 
 /** ########################## END thread function ##########################
  */
-
-
 
 
 JobContext::JobContext (const MapReduceClient &client,
@@ -106,7 +115,6 @@ JobContext::JobContext (const MapReduceClient &client,
     input_vec (inputVec), output_vec (outputVec),
     barrier (new Barrier (numOfThreads))
 {
-  //threads init somehow?
   threads = new pthread_t[numOfThreads];//TODO: consider not allocating
   job_state.stage = UNDEFINED_STAGE; //TODO:  threads coming initialized to this val?
   job_state.percentage = 0.0;
