@@ -30,7 +30,6 @@ struct JobContext {
 
     void startThreads ();
     void shuffleStage ();
-    void JoinAllThreads ();
     void InsertVector (const IntermediateVec &vec);
 
     int numOfThreads;
@@ -54,11 +53,9 @@ struct JobContext {
 
     bool alreadyWait;
 
-    void incCounter () const;
-    void setStage (int stage);
-
     uint64_t getCounter () const;
     static bool isKeysEqual (IntermediatePair p1, IntermediatePair p2);
+    static void checkStatus (const int *status);
 };
 
 #endif //_JOBCONTEXT_H_

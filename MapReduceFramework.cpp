@@ -8,6 +8,7 @@
 #define STAGE 62
 #define TOTAL_PAIRS 31
 #define RIGHT_MOST_31 0x7FFFFFFF
+#define FAILED 1
 
 JobHandle startMapReduceJob (const MapReduceClient &client,
                              const InputVec &inputVec, OutputVec &outputVec,
@@ -43,7 +44,7 @@ void waitForJob (JobHandle job)
       if (pthread_join (job_context->threads[i], nullptr) != 0)
         {
           printf ("system error: witing twice in a job\n");
-          exit (1);
+          exit (FAILED);
         }
     }
 }

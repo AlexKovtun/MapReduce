@@ -12,6 +12,7 @@
 
 #define FAILED_CREATE_THREAD " failed create thread"
 
+#define STATUS_SIZE 5
 bool compareKey (IntermediatePair p1, IntermediatePair p2)
 {
   return *p1.first < *p2.first;
@@ -27,7 +28,8 @@ bool compareKey (IntermediatePair p1, IntermediatePair p2)
 
 
 
-void mapStage(void* threadContext){
+void mapStage (void *threadContext)
+{
   auto thread_context = (ThreadContext *) threadContext;
   auto job_vec = thread_context->job_context->input_vec;
   while (thread_context->job_context->getCounter () < job_vec.size ())
@@ -49,8 +51,8 @@ void mapStage(void* threadContext){
     }
 }
 
-
-void shuffleStage(ThreadContext* thread_context){
+void shuffleStage (ThreadContext *thread_context)
+{
   thread_context->job_context->barrier->barrier ();
   if (thread_context->id == SHUFFLE_THREAD)
     {
@@ -59,20 +61,21 @@ void shuffleStage(ThreadContext* thread_context){
   thread_context->job_context->barrier->barrier ();
 }
 
-void* reduceStage(ThreadContext *thread_context){
+void reduceStage (ThreadContext *thread_context)
+{
   while (!thread_context->job_context->shuffle_vec.empty ())
     {
       pthread_mutex_lock (&thread_context->job_context->reduce_mutex);
       if (thread_context->job_context->shuffle_vec.empty ())
         {
           pthread_mutex_unlock (&thread_context->job_context->reduce_mutex);
-          return nullptr;
+          return;
         }
       auto vec = thread_context->job_context->shuffle_vec.back ();
       if (vec.empty ())
         {
           pthread_mutex_unlock (&thread_context->job_context->reduce_mutex);
-          return nullptr;
+          return;
         }
       thread_context->job_context->shuffle_vec.pop_back ();
       pthread_mutex_unlock (&thread_context->job_context->reduce_mutex);
@@ -85,7 +88,7 @@ void *MapReduceLogic (void *threadContext)
 {
   /** MAP STAGE **/
   auto thread_context = (ThreadContext *) threadContext;
-  mapStage(threadContext);
+  mapStage (threadContext);
   /** END MAP STAGE **/
 
   /** SORT STAGE **/
@@ -99,7 +102,7 @@ void *MapReduceLogic (void *threadContext)
 
 
   /** REDUCE STAGE **/
-  reduceStage(thread_context);
+  reduceStage (thread_context);
   return nullptr;
   /** END REDUCE STAGE **/
 }
@@ -149,17 +152,28 @@ JobContext::~JobContext ()
 {
   delete[]threads;
   delete barrier;
-  pthread_mutex_destroy (&reduce_mutex);
-  pthread_mutex_destroy (&emit3_mutex);
-  pthread_mutex_destroy (&map_mutex);
-  pthread_mutex_destroy (&already_wait_mutex);
-  pthread_mutex_destroy (&job_state_mutex);
+  int status[STATUS_SIZE] = {0};
+  status[0] = pthread_mutex_destroy (&reduce_mutex);
+  status[1] = pthread_mutex_destroy (&emit3_mutex);
+  status[2] = pthread_mutex_destroy (&map_mutex);
+  status[3] = pthread_mutex_destroy (&already_wait_mutex);
+  status[4] = pthread_mutex_destroy (&job_state_mutex);
+
   delete atomic_counter;
   for (auto &threadContext: threadContexts)
     {
       delete threadContext;
     }
   threadContexts.clear ();
+}
+
+void JobContext::checkStatus(const int status[]){
+  for(int i = 0; i < STATUS_SIZE;++i){
+    if(status[i] != 0){
+      printf("system error: Error in deleting mutex, probably someone is using it");';
+      exit(1);
+    }
+  }
 }
 
 void JobContext::shuffleStage ()
@@ -169,9 +183,8 @@ void JobContext::shuffleStage ()
     {
       total_size += (int) threadContexts[i]->vec.size ();
     }
-//  *atomic_counter&= 0x3FFFFFFFFFFFFFFF;
-//  *atomic_counter|= 2ULL << STAGE;
-  *atomic_counter = total_size << TOTAL_PAIRS | (uint64_t) SHUFFLE_STAGE << STAGE;
+  *atomic_counter =
+      total_size << TOTAL_PAIRS | (uint64_t) SHUFFLE_STAGE << STAGE;
   job_state.stage = SHUFFLE_STAGE;
   for (int i = 0; i < numOfThreads; ++i)
     {
@@ -184,7 +197,6 @@ void JobContext::shuffleStage ()
     }
   *atomic_counter = total_size << TOTAL_PAIRS | (uint64_t) REDUCE_STAGE << 62;
   job_state.stage = REDUCE_STAGE;
-  //std::cout<<*atomic_counter<<std::endl;
 }
 
 void JobContext::InsertVector (const IntermediateVec &vec)
@@ -206,40 +218,6 @@ void JobContext::InsertVector (const IntermediateVec &vec)
           shuffle_map[elem.first].emplace_back (elem.first, elem.second);
         }
       ++(*atomic_counter);
-    }
-}
-
-void JobContext::JoinAllThreads ()
-{
-
-}
-
-void JobContext::incCounter () const
-{
-  ++(*atomic_counter);
-}
-
-void JobContext::setStage (int stage)
-{
-  //need to reset the flag
-  (*atomic_counter) &= 0x3FFFFFFFFFFFFFFF;
-  if (stage == MAP_STAGE)
-    {
-      (*atomic_counter) |= 1ULL << STAGE;
-      //std::cout<<*atomic_counter<<std::endl;
-      this->job_state.stage = MAP_STAGE;
-    }
-  else if (stage == SHUFFLE_STAGE)
-    {
-      (*atomic_counter) |= 2ULL << STAGE;
-      //std::cout<<*atomic_counter<<std::endl;
-      this->job_state.stage = SHUFFLE_STAGE;
-    }
-  else if (stage == REDUCE_STAGE)
-    {
-      (*atomic_counter) |= 3ULL << STAGE;
-      //std::cout<<*atomic_counter<<std::endl;
-      this->job_state.stage = REDUCE_STAGE;
     }
 }
 
